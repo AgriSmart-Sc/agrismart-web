@@ -575,7 +575,7 @@ function ClientApp() {
           <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 2 }}>Bienvenido</div>
           <div className="as-display" style={{ fontWeight: 700, fontSize: 20 }}>{cliente.nombre}</div>
         </div>
-     
+     </div>
 
       {/* Campaign hero */}
       <div style={{
