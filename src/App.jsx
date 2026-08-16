@@ -474,7 +474,8 @@ function ClientApp() {
   const [cargandoCliente, setCargandoCliente] = useState(true);
 
   const propiedad = null;
-  const trabajos = [];
+  const [trabajos, setTrabajos] = useState([]);
+const [pagos, setPagos] = useState([]);
 
   useEffect(() => {
     let mounted = true;
@@ -505,27 +506,106 @@ function ClientApp() {
         return;
       }
 
-      const { data: clienteReal } = await supabase
-        .from("clientes")
-        .select("id, nombre, empresa")
-        .eq("id", perfil.cliente_id)
-        .maybeSingle();
+      const { data: clienteReal, error: clienteError } = await supabase
+  .from("clientes")
+  .select("id, nombre, empresa")
+  .eq("id", perfil.cliente_id)
+  .maybeSingle();
 
-      if (!mounted) return;
+const { data: trabajosReal, error: trabajosError } = await supabase
+  .from("trabajos")
+  .select(`
+    id,
+    cliente_id,
+    drone_id,
+    fecha,
+    propiedad,
+    lote,
+    cultivo,
+    hectareas,
+    tarifa_ha,
+    monto_total,
+    estado
+  `)
+  .eq("cliente_id", perfil.cliente_id)
+  .order("fecha", { ascending: false });
 
-      if (clienteReal) {
-        setCliente({
-          ...clienteReal,
-          cultivo: "Sin campaña",
-          ha: 0,
-          realizado: 0,
-          facturado: 0,
-          pagado: 0,
-          precio: 0,
-        });
-      }
+const { data: pagosReal, error: pagosError } = await supabase
+  .from("pagos")
+  .select(`
+    id,
+    cliente_id,
+    trabajo_id,
+    fecha,
+    monto,
+    metodo,
+    referencia,
+    observaciones
+  `)
+  .eq("cliente_id", perfil.cliente_id)
+  .order("fecha", { ascending: false });
 
-      setCargandoCliente(false);
+if (!mounted) return;
+
+if (clienteError || trabajosError || pagosError) {
+  console.error("Error cargando portal:", {
+    clienteError,
+    trabajosError,
+    pagosError
+  });
+
+  setCliente(null);
+  setTrabajos([]);
+  setPagos([]);
+  setCargandoCliente(false);
+  return;
+}
+
+const listaTrabajos = trabajosReal || [];
+const listaPagos = pagosReal || [];
+
+setTrabajos(listaTrabajos);
+setPagos(listaPagos);
+
+const hectareasTotales = listaTrabajos.reduce(
+  (total, t) => total + Number(t.hectareas || 0),
+  0
+);
+
+const hectareasRealizadas = listaTrabajos
+  .filter(
+    (t) => String(t.estado || "").toLowerCase() === "finalizado"
+  )
+  .reduce(
+    (total, t) => total + Number(t.hectareas || 0),
+    0
+  );
+
+const totalFacturado = listaTrabajos.reduce(
+  (total, t) => total + Number(t.monto_total || 0),
+  0
+);
+
+const totalPagado = listaPagos.reduce(
+  (total, p) => total + Number(p.monto || 0),
+  0
+);
+
+const ultimoTrabajo = listaTrabajos[0];
+
+if (clienteReal) {
+  setCliente({
+    ...clienteReal,
+    cultivo: ultimoTrabajo?.cultivo || "Sin campaña",
+    ha: hectareasTotales,
+    realizado: hectareasRealizadas,
+    facturado: totalFacturado,
+    pagado: totalPagado,
+    precio: Number(ultimoTrabajo?.tarifa_ha || 0),
+  });
+}
+
+setCargandoCliente(false);
     };
 
     cargarCliente();
@@ -625,10 +705,10 @@ function ClientApp() {
                       {t.lote} <Badge estado={t.estado} />
                     </div>
                     <div className="as-mono" style={{ fontSize: 11.5, color: C.muted, marginTop: 2 }}>
-                      {t.fecha} · {t.producto} · {t.dosis}
+                      {t.fecha} · {t.cultivo} · {t.propiedad}
                     </div>
                   </div>
-                  <div className="as-mono" style={{ fontWeight: 700, fontSize: 14 }}>{fmtHa(t.ha)}</div>
+                  <div className="as-mono" style={{ fontWeight: 700, fontSize: 14 }}>{fmtHa(t.hectareas)}</div>
                 </div>
               ))}
             </div>
