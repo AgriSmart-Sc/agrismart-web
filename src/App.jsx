@@ -865,7 +865,20 @@ if (!role) {
             <div style={{ fontSize: 10.5, color: C.muted, letterSpacing: .3 }}>AGRICULTURA INTELIGENTE</div>
           </div>
         </div>
-
+<button
+  onClick={() => supabase.auth.signOut()}
+  style={{
+    border: `1px solid ${C.border}`,
+    background: C.surface,
+    color: C.primary,
+    borderRadius: 9,
+    padding: "8px 14px",
+    fontWeight: 600,
+    cursor: "pointer"
+  }}
+>
+  Cerrar sesión
+</button>
         
         
       </header>
