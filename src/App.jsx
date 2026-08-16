@@ -1016,6 +1016,114 @@ const saldoCliente = totalFacturadoCliente - totalPagadoCliente;
     </div>
   </div>
 </div>
+    <div
+  style={{
+    marginTop: 24,
+    paddingTop: 20,
+    borderTop: `1px solid ${C.border}`
+  }}
+>
+  <div
+    style={{
+      fontSize: 18,
+      fontWeight: 700,
+      color: C.ink,
+      marginBottom: 14
+    }}
+  >
+    Historial de trabajos
+  </div>
+
+  {cargandoFicha ? (
+    <div style={{ color: C.muted }}>
+      Cargando trabajos...
+    </div>
+  ) : trabajosCliente.length === 0 ? (
+    <div style={{ color: C.muted }}>
+      Este cliente todavía no tiene trabajos registrados.
+    </div>
+  ) : (
+    <div
+      style={{
+        border: `1px solid ${C.border}`,
+        borderRadius: 12,
+        overflow: "hidden"
+      }}
+    >
+      {trabajosCliente.map((t, i) => (
+        <div
+          key={t.id}
+          style={{
+            padding: "14px 16px",
+            borderTop: i ? `1px solid ${C.border}` : "none"
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+              alignItems: "center"
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontWeight: 700,
+                  color: C.ink
+                }}
+              >
+                {t.lote || "Sin lote"} · {t.cultivo || "Sin cultivo"}
+              </div>
+
+              <div
+                style={{
+                  fontSize: 12,
+                  color: C.muted,
+                  marginTop: 4
+                }}
+              >
+                {t.fecha} · {t.propiedad || "Sin propiedad"}
+              </div>
+            </div>
+
+            <div
+              style={{
+                fontWeight: 700,
+                color: C.ink,
+                textAlign: "right"
+              }}
+            >
+              {Number(t.hectareas || 0).toLocaleString("es-BO")} ha
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+              marginTop: 10,
+              fontSize: 12
+            }}
+          >
+            <span style={{ color: C.muted }}>
+              Bs {Number(t.tarifa_ha || 0).toLocaleString("es-BO")}/ha
+            </span>
+
+            <span style={{ fontWeight: 700, color: C.primary }}>
+              Bs {Number(t.monto_total || 0).toLocaleString("es-BO")}
+            </span>
+
+            <span style={{ color: C.muted }}>
+              {t.estado || "Sin estado"}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
   </div>
 )}
       <div style={{
