@@ -1124,6 +1124,107 @@ const saldoCliente = totalFacturadoCliente - totalPagadoCliente;
     </div>
   )}
 </div>
+    <div
+  style={{
+    marginTop: 24,
+    paddingTop: 20,
+    borderTop: `1px solid ${C.border}`
+  }}
+>
+  <div
+    style={{
+      fontSize: 18,
+      fontWeight: 700,
+      color: C.ink,
+      marginBottom: 14
+    }}
+  >
+    Historial de pagos
+  </div>
+
+  {cargandoFicha ? (
+    <div style={{ color: C.muted }}>
+      Cargando pagos...
+    </div>
+  ) : pagosCliente.length === 0 ? (
+    <div style={{ color: C.muted }}>
+      Este cliente todavía no tiene pagos registrados.
+    </div>
+  ) : (
+    <div
+      style={{
+        border: `1px solid ${C.border}`,
+        borderRadius: 12,
+        overflow: "hidden"
+      }}
+    >
+      {pagosCliente.map((p, i) => (
+        <div
+          key={p.id}
+          style={{
+            padding: "14px 16px",
+            borderTop: i ? `1px solid ${C.border}` : "none"
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+              alignItems: "center"
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 700, color: C.ink }}>
+                {p.metodo || "Pago"}
+              </div>
+
+              <div
+                style={{
+                  fontSize: 12,
+                  color: C.muted,
+                  marginTop: 4
+                }}
+              >
+                {p.fecha}
+              </div>
+            </div>
+
+            <div
+              style={{
+                fontSize: 18,
+                fontWeight: 700,
+                color: C.primary
+              }}
+            >
+              Bs {Number(p.monto || 0).toLocaleString("es-BO")}
+            </div>
+          </div>
+
+          <div
+            style={{
+              fontSize: 12,
+              color: C.muted,
+              marginTop: 10
+            }}
+          >
+            Referencia: {p.referencia || "Sin referencia"}
+          </div>
+
+          {p.observaciones && (
+            <div
+              style={{
+                fontSize: 12,
+                color: C.muted,
+                marginTop: 4
+              }}
+            >
+              {p.observaciones}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
   </div>
 )}
       <div style={{
