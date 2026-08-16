@@ -474,6 +474,7 @@ function AdminApp() {
 
    const [mostrarFormulario, setMostrarFormulario] = useState(false);
       const [guardando, setGuardando] = useState(false);
+   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
       const [form, setForm] = useState({
         nombre: "",
         empresa: "",
@@ -776,6 +777,98 @@ const guardarCliente = async () => {
     </div>
   </div>
 )}
+      {clienteSeleccionado && (
+  <div
+    style={{
+      background: C.surface,
+      border: `1px solid ${C.border}`,
+      borderRadius: 14,
+      padding: 20,
+      marginBottom: 20
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 12,
+        marginBottom: 18
+      }}
+    >
+      <div>
+        <div style={{ fontSize: 12, color: C.muted }}>
+          Ficha del cliente
+        </div>
+
+        <div
+          style={{
+            fontSize: 22,
+            fontWeight: 700,
+            color: C.ink
+          }}
+        >
+          {clienteSeleccionado.nombre}
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setClienteSeleccionado(null)}
+        style={{
+          border: `1px solid ${C.border}`,
+          background: C.surface,
+          padding: "9px 14px",
+          borderRadius: 10,
+          cursor: "pointer"
+        }}
+      >
+        Cerrar
+      </button>
+    </div>
+
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+        gap: 12
+      }}
+    >
+      <div>
+        <div style={{ fontSize: 11, color: C.muted }}>Empresa</div>
+        <div style={{ fontWeight: 600 }}>
+          {clienteSeleccionado.empresa || "Sin empresa"}
+        </div>
+      </div>
+
+      <div>
+        <div style={{ fontSize: 11, color: C.muted }}>Teléfono</div>
+        <div style={{ fontWeight: 600 }}>
+          {clienteSeleccionado.telefono || "Sin teléfono"}
+        </div>
+      </div>
+
+      <div>
+        <div style={{ fontSize: 11, color: C.muted }}>Correo</div>
+        <div style={{ fontWeight: 600 }}>
+          {clienteSeleccionado.correo || "Sin correo"}
+        </div>
+      </div>
+
+      <div>
+        <div style={{ fontSize: 11, color: C.muted }}>Estado</div>
+        <div
+          style={{
+            fontWeight: 700,
+            color: clienteSeleccionado.activo ? C.primary : C.muted
+          }}
+        >
+          {clienteSeleccionado.activo ? "Activo" : "Inactivo"}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
       <div style={{
         background: C.surface,
         border: `1px solid ${C.border}`,
@@ -785,9 +878,11 @@ const guardarCliente = async () => {
         {clientes.map((c, i) => (
           <div
             key={c.id}
+            onClick={() => setClienteSeleccionado(c)}
             style={{
               padding: "14px 16px",
-              borderTop: i ? `1px solid ${C.border}` : "none"
+              borderTop: i ? `1px solid ${C.border}` : "none",
+              cursor: "pointer"
             }}
           >
             <div style={{ fontWeight: 700, color: C.ink }}>
