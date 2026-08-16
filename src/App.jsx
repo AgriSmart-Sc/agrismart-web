@@ -478,6 +478,18 @@ function AdminApp() {
    const [trabajosCliente, setTrabajosCliente] = useState([]);
 const [pagosCliente, setPagosCliente] = useState([]);
 const [cargandoFicha, setCargandoFicha] = useState(false);
+   const [mostrarNuevoTrabajo, setMostrarNuevoTrabajo] = useState(false);
+const [guardandoTrabajo, setGuardandoTrabajo] = useState(false);
+
+const [nuevoTrabajo, setNuevoTrabajo] = useState({
+  fecha: new Date().toISOString().slice(0, 10),
+  propiedad: "",
+  lote: "",
+  cultivo: "",
+  hectareas: "",
+  tarifa_ha: "90",
+  estado: "programado"
+});
       const [form, setForm] = useState({
         nombre: "",
         empresa: "",
@@ -578,6 +590,116 @@ const [cargandoFicha, setCargandoFicha] = useState(false);
     activo = false;
   };
 }, [clienteSeleccionado?.id]);
+   const guardarNuevoTrabajo = async () => {
+  if (!clienteSeleccionado?.id) {
+    window.alert("Primero seleccioná un cliente.");
+    return;
+  }
+
+  const hectareas = Number(
+    String(nuevoTrabajo.hectareas).replace(",", ".")
+  );
+
+  const tarifaHa = Number(
+    String(nuevoTrabajo.tarifa_ha).replace(",", ".")
+  );
+
+  if (!nuevoTrabajo.fecha) {
+    window.alert("La fecha es obligatoria.");
+    return;
+  }
+
+  if (!nuevoTrabajo.propiedad.trim()) {
+    window.alert("La propiedad es obligatoria.");
+    return;
+  }
+
+  if (!nuevoTrabajo.lote.trim()) {
+    window.alert("El lote es obligatorio.");
+    return;
+  }
+
+  if (!nuevoTrabajo.cultivo.trim()) {
+    window.alert("El cultivo es obligatorio.");
+    return;
+  }
+
+  if (!Number.isFinite(hectareas) || hectareas <= 0) {
+    window.alert("Ingresá una cantidad válida de hectáreas.");
+    return;
+  }
+
+  if (!Number.isFinite(tarifaHa) || tarifaHa < 0) {
+    window.alert("Ingresá una tarifa válida.");
+    return;
+  }
+
+  setGuardandoTrabajo(true);
+
+  const { data: dron, error: dronError } = await supabase
+    .from("drones")
+    .select("id")
+    .limit(1)
+    .maybeSingle();
+
+  if (dronError || !dron?.id) {
+    console.error("Error buscando dron:", dronError);
+    window.alert(
+      "No se encontró un dron registrado. Primero registrá un dron."
+    );
+    setGuardandoTrabajo(false);
+    return;
+  }
+
+  const montoTotal = hectareas * tarifaHa;
+
+  const { data, error } = await supabase
+    .from("trabajos")
+    .insert([
+      {
+        cliente_id: clienteSeleccionado.id,
+        drone_id: dron.id,
+        fecha: nuevoTrabajo.fecha,
+        propiedad: nuevoTrabajo.propiedad.trim(),
+        lote: nuevoTrabajo.lote.trim(),
+        cultivo: nuevoTrabajo.cultivo.trim(),
+        hectareas,
+        tarifa_ha: tarifaHa,
+        monto_total: montoTotal,
+        estado: nuevoTrabajo.estado
+      }
+    ])
+    .select(
+      "id, cliente_id, drone_id, fecha, propiedad, lote, cultivo, hectareas, tarifa_ha, monto_total, estado"
+    )
+    .single();
+
+  if (error) {
+    console.error("Error creando trabajo:", error);
+    window.alert(`No se pudo guardar el trabajo: ${error.message}`);
+    setGuardandoTrabajo(false);
+    return;
+  }
+
+  setTrabajosCliente((actuales) =>
+    [data, ...actuales].sort(
+      (a, b) => new Date(b.fecha) - new Date(a.fecha)
+    )
+  );
+
+  setNuevoTrabajo({
+    fecha: new Date().toISOString().slice(0, 10),
+    propiedad: "",
+    lote: "",
+    cultivo: "",
+    hectareas: "",
+    tarifa_ha: "90",
+    estado: "programado"
+  });
+
+  setMostrarNuevoTrabajo(false);
+  setGuardandoTrabajo(false);
+};
 const guardarCliente = async () => {
   if (!form.nombre.trim()) {
     setError("El nombre del cliente es obligatorio");
@@ -888,7 +1010,22 @@ const saldoCliente = totalFacturadoCliente - totalPagadoCliente;
           {clienteSeleccionado.nombre}
         </div>
       </div>
-
+<button
+  type="button"
+  onClick={() => setMostrarNuevoTrabajo(true)}
+  style={{
+    border: "none",
+    background: C.primary,
+    color: "#fff",
+    padding: "9px 14px",
+    borderRadius: 10,
+    cursor: "pointer",
+    fontWeight: 700,
+    marginLeft: "auto"
+  }}
+>
+  + Nuevo trabajo
+</button>
       <button
         type="button"
         onClick={() => setClienteSeleccionado(null)}
@@ -903,7 +1040,197 @@ const saldoCliente = totalFacturadoCliente - totalPagadoCliente;
         Cerrar
       </button>
     </div>
+{mostrarNuevoTrabajo && (
+  <div
+    style={{
+      background: C.surface,
+      border: `1px solid ${C.border}`,
+      borderRadius: 14,
+      padding: 18,
+      marginBottom: 20
+    }}
+  >
+    <div
+      style={{
+        fontSize: 18,
+        fontWeight: 700,
+        color: C.ink,
+        marginBottom: 16
+      }}
+    >
+      Nuevo trabajo
+    </div>
 
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+        gap: 12
+      }}
+    >
+      <input
+        type="date"
+        value={nuevoTrabajo.fecha}
+        onChange={(e) =>
+          setNuevoTrabajo({
+            ...nuevoTrabajo,
+            fecha: e.target.value
+          })
+        }
+        style={{
+          padding: 12,
+          borderRadius: 10,
+          border: `1px solid ${C.border}`
+        }}
+      />
+
+      <input
+        placeholder="Propiedad *"
+        value={nuevoTrabajo.propiedad}
+        onChange={(e) =>
+          setNuevoTrabajo({
+            ...nuevoTrabajo,
+            propiedad: e.target.value
+          })
+        }
+        style={{
+          padding: 12,
+          borderRadius: 10,
+          border: `1px solid ${C.border}`
+        }}
+      />
+
+      <input
+        placeholder="Lote *"
+        value={nuevoTrabajo.lote}
+        onChange={(e) =>
+          setNuevoTrabajo({
+            ...nuevoTrabajo,
+            lote: e.target.value
+          })
+        }
+        style={{
+          padding: 12,
+          borderRadius: 10,
+          border: `1px solid ${C.border}`
+        }}
+      />
+
+      <input
+        placeholder="Cultivo *"
+        value={nuevoTrabajo.cultivo}
+        onChange={(e) =>
+          setNuevoTrabajo({
+            ...nuevoTrabajo,
+            cultivo: e.target.value
+          })
+        }
+        style={{
+          padding: 12,
+          borderRadius: 10,
+          border: `1px solid ${C.border}`
+        }}
+      />
+
+      <input
+        type="number"
+        step="0.01"
+        placeholder="Hectáreas *"
+        value={nuevoTrabajo.hectareas}
+        onChange={(e) =>
+          setNuevoTrabajo({
+            ...nuevoTrabajo,
+            hectareas: e.target.value
+          })
+        }
+        style={{
+          padding: 12,
+          borderRadius: 10,
+          border: `1px solid ${C.border}`
+        }}
+      />
+
+      <input
+        type="number"
+        step="0.01"
+        placeholder="Tarifa Bs/ha *"
+        value={nuevoTrabajo.tarifa_ha}
+        onChange={(e) =>
+          setNuevoTrabajo({
+            ...nuevoTrabajo,
+            tarifa_ha: e.target.value
+          })
+        }
+        style={{
+          padding: 12,
+          borderRadius: 10,
+          border: `1px solid ${C.border}`
+        }}
+      />
+
+      <select
+        value={nuevoTrabajo.estado}
+        onChange={(e) =>
+          setNuevoTrabajo({
+            ...nuevoTrabajo,
+            estado: e.target.value
+          })
+        }
+        style={{
+          padding: 12,
+          borderRadius: 10,
+          border: `1px solid ${C.border}`,
+          background: "#fff"
+        }}
+      >
+        <option value="programado">Programado</option>
+        <option value="en_proceso">En proceso</option>
+        <option value="finalizado">Finalizado</option>
+        <option value="cancelado">Cancelado</option>
+      </select>
+    </div>
+
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: 10,
+        marginTop: 16
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setMostrarNuevoTrabajo(false)}
+        style={{
+          padding: "10px 16px",
+          borderRadius: 10,
+          border: `1px solid ${C.border}`,
+          background: C.surface,
+          cursor: "pointer"
+        }}
+      >
+        Cancelar
+      </button>
+
+      <button
+        type="button"
+        onClick={guardarNuevoTrabajo}
+        disabled={guardandoTrabajo}
+        style={{
+          padding: "10px 16px",
+          borderRadius: 10,
+          border: "none",
+          background: C.primary,
+          color: "#fff",
+          fontWeight: 700,
+          cursor: "pointer"
+        }}
+      >
+        {guardandoTrabajo ? "Guardando..." : "Guardar trabajo"}
+      </button>
+    </div>
+  </div>
+)}
     <div
       style={{
         display: "grid",
