@@ -429,6 +429,7 @@ function Stat({ icon: Icon, label, value }) {
 const ADMIN_TABS = [
   { id: "resumen", label: "Resumen", icon: LayoutDashboard },
   { id: "cobranza", label: "Cobranza", icon: Wallet },
+  { id: "clientes", label: "Clientes", icon: LayoutDashboard },
   { id: "drones", label: "Drones", icon: Plane },
 ];
 
@@ -460,11 +461,115 @@ function AdminApp() {
       </div>
       {tab === "resumen" && <AdminResumen />}
       {tab === "cobranza" && <AdminCobranza />}
+      {tab === "clientes" && <AdminClientes />}
       {tab === "drones" && <AdminDrones />}
     </div>
   );
 }
+function AdminClientes() {
+  const [clientes, setClientes] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(null);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const cargarClientes = async () => {
+      setCargando(true);
+
+      const { data, error } = await supabase
+        .from("clientes")
+        .select("id, nombre, empresa, telefono, correo, activo")
+        .order("nombre", { ascending: true });
+
+      if (!mounted) return;
+
+      if (error) {
+        console.error("Error cargando clientes:", error);
+        setError(error.message);
+        setClientes([]);
+      } else {
+        setError(null);
+        setClientes(data || []);
+      }
+
+      setCargando(false);
+    };
+
+    cargarClientes();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (cargando) {
+    return <div style={{ padding: 24 }}>Cargando clientes...</div>;
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: 24 }}>
+        Error al cargar clientes: {error}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 20
+      }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: C.ink }}>
+            Clientes
+          </div>
+          <div style={{ fontSize: 13, color: C.muted }}>
+            {clientes.length} clientes registrados
+          </div>
+        </div>
+      </div>
+
+      <div style={{
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+        borderRadius: 14,
+        overflow: "hidden"
+      }}>
+        {clientes.map((c, i) => (
+          <div
+            key={c.id}
+            style={{
+              padding: "14px 16px",
+              borderTop: i ? `1px solid ${C.border}` : "none"
+            }}
+          >
+            <div style={{ fontWeight: 700, color: C.ink }}>
+              {c.nombre}
+            </div>
+
+            <div style={{ fontSize: 12.5, color: C.muted, marginTop: 3 }}>
+              {c.empresa || "Sin empresa"}
+              {c.telefono ? ` · ${c.telefono}` : ""}
+              {c.correo ? ` · ${c.correo}` : ""}
+            </div>
+
+            <div style={{
+              fontSize: 11.5,
+              marginTop: 5,
+              color: c.activo ? C.primary : C.muted
+            }}>
+              {c.activo ? "Activo" : "Inactivo"}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+              }
 /* ---------------------------------------------------------------------- */
 /* PORTAL DEL CLIENTE                                                      */
 /* ---------------------------------------------------------------------- */
