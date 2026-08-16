@@ -1125,6 +1125,7 @@ const saldoCliente = totalFacturadoCliente - totalPagadoCliente;
   )}
 </div>
     <div
+    
   style={{
     marginTop: 24,
     paddingTop: 20,
@@ -1225,7 +1226,9 @@ const saldoCliente = totalFacturadoCliente - totalPagadoCliente;
         </div>
       ))}
     </div>
+  )}
   </div>
+    </div>
 )}
       <div style={{
         background: C.surface,
