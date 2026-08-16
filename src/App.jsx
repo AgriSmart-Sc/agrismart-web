@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
@@ -8,6 +8,7 @@ import {
   AlertTriangle, CheckCircle2, Clock, Droplets, Wrench, ChevronDown, Leaf,
   Gauge, Battery, MapPin, Sprout, X,
 } from "lucide-react";
+import { supabase } from "./supabase";
 
 /* ---------------------------------------------------------------------- */
 /* TOKENS                                                                  */
@@ -613,7 +614,236 @@ function Row({ label, value, bold, color }) {
 /* ROOT                                                                     */
 /* ---------------------------------------------------------------------- */
 export default function AgriSmartPrototype() {
-  const [role, setRole] = useState("admin");
+  const [role, setRole] = useState(null);
+const [session, setSession] = useState(null);
+const [authLoading, setAuthLoading] = useState(true);
+const [email, setEmail] = useState("");
+const [password, setPassword] = useState("");
+const [authError, setAuthError] = useState("");
+const [authSubmitting, setAuthSubmitting] = useState(false);
+  
+useEffect(() => {
+  let mounted = true;
+
+  const cargarUsuario = async (currentSession) => {
+    if (!mounted) return;
+
+    setSession(currentSession);
+
+    if (!currentSession) {
+      setRole(null);
+      setAuthLoading(false);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("perfiles")
+      .select("rol, activo")
+      .eq("usuario_id", currentSession.user.id)
+      .single();
+
+    if (!mounted) return;
+
+    if (error || !data?.activo) {
+      setRole(null);
+    } else {
+      setRole(data.rol);
+    }
+
+    setAuthLoading(false);
+  };
+
+  supabase.auth.getSession().then(({ data }) => {
+    cargarUsuario(data.session);
+  });
+
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    cargarUsuario(newSession);
+  });
+
+  return () => {
+    mounted = false;
+    subscription.unsubscribe();
+  };
+}, []);const iniciarSesion = async (e) => {
+  e.preventDefault();
+  setAuthError("");
+  setAuthSubmitting(true);
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email: email.trim(),
+    password,
+  });
+
+  if (error) {
+    setAuthError("Correo o contraseña incorrectos.");
+  }
+
+  setAuthSubmitting(false);
+};
+
+if (authLoading) {
+  return (
+    <div style={{
+      minHeight: "100vh",
+      display: "grid",
+      placeItems: "center",
+      background: C.canvas,
+      color: C.primary,
+      fontFamily: "Arial, sans-serif"
+    }}>
+      Cargando AGRISMART...
+    </div>
+  );
+}
+
+if (!session) {
+  return (
+    <div style={{
+      minHeight: "100vh",
+      display: "grid",
+      placeItems: "center",
+      background: C.canvas,
+      padding: 24
+    }}>
+      <style>{STYLE}</style>
+
+      <form
+        onSubmit={iniciarSesion}
+        style={{
+          width: "100%",
+          maxWidth: 420,
+          background: C.surface,
+          border: `1px solid ${C.border}`,
+          borderRadius: 18,
+          padding: 28,
+          boxShadow: "0 12px 40px rgba(0,0,0,.08)"
+        }}
+      >
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          marginBottom: 24
+        }}>
+          <div style={{
+            width: 44,
+            height: 44,
+            borderRadius: 12,
+            background: C.primary,
+            display: "grid",
+            placeItems: "center"
+          }}>
+            <Leaf size={22} color="#fff" />
+          </div>
+
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: C.ink }}>
+              AgriSmart
+            </div>
+            <div style={{ fontSize: 11, color: C.muted, letterSpacing: 1 }}>
+              AGRICULTURA INTELIGENTE
+            </div>
+          </div>
+        </div>
+
+        <h2 style={{ margin: "0 0 6px", color: C.ink }}>
+          Iniciar sesión
+        </h2>
+
+        <p style={{ margin: "0 0 22px", color: C.muted, fontSize: 14 }}>
+          Acceso privado para administradores y clientes.
+        </p>
+
+        <input
+          type="email"
+          required
+          placeholder="Correo electrónico"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            padding: "13px 14px",
+            borderRadius: 10,
+            border: `1px solid ${C.border}`,
+            marginBottom: 12,
+            fontSize: 15
+          }}
+        />
+
+        <input
+          type="password"
+          required
+          placeholder="Contraseña"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            padding: "13px 14px",
+            borderRadius: 10,
+            border: `1px solid ${C.border}`,
+            marginBottom: 12,
+            fontSize: 15
+          }}
+        />
+
+        {authError && (
+          <div style={{
+            color: "#B4482D",
+            background: "#F3DAD0",
+            padding: 10,
+            borderRadius: 8,
+            fontSize: 13,
+            marginBottom: 12
+          }}>
+            {authError}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={authSubmitting}
+          style={{
+            width: "100%",
+            border: "none",
+            borderRadius: 10,
+            padding: "13px 16px",
+            background: C.primary,
+            color: "#fff",
+            fontWeight: 700,
+            fontSize: 15,
+            cursor: "pointer"
+          }}
+        >
+          {authSubmitting ? "Ingresando..." : "Ingresar"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+if (!role) {
+  return (
+    <div style={{
+      minHeight: "100vh",
+      display: "grid",
+      placeItems: "center",
+      background: C.canvas,
+      padding: 24
+    }}>
+      <div style={{ textAlign: "center" }}>
+        <h2>Usuario sin acceso activo</h2>
+        <button onClick={() => supabase.auth.signOut()}>
+          Cerrar sesión
+        </button>
+      </div>
+    </div>
+  );
+              }
   return (
     <div className="as-root">
       <style>{STYLE}</style>
@@ -636,31 +866,13 @@ export default function AgriSmartPrototype() {
           </div>
         </div>
 
-        <div style={{ display: "flex", background: C.canvas, borderRadius: 10, padding: 3, gap: 2 }}>
-          {[{ id: "admin", label: "Panel Administrador" }, { id: "cliente", label: "Portal Cliente" }].map((r) => (
-            <button
-              key={r.id}
-              onClick={() => setRole(r.id)}
-              className="as-btn"
-              style={{
-                padding: "7px 14px", borderRadius: 8, border: "none", fontSize: 12.5, fontWeight: 600,
-                background: role === r.id ? C.surface : "transparent",
-                color: role === r.id ? C.primary : C.muted,
-                boxShadow: role === r.id ? "0 1px 4px rgba(0,0,0,.08)" : "none",
-              }}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
+        
+        
       </header>
 
-      <div style={{
-        background: C.accentSoft, color: "#8A6414", fontSize: 11.5, textAlign: "center",
-        padding: "6px 10px", fontWeight: 500,
-      }}>
-        Modo demostración — datos de ejemplo, sin autenticación real
-      </div>
+
+        
+      
 
       <main style={{ maxWidth: 1080, margin: "0 auto", padding: "26px 24px 60px" }}>
         {role === "admin" ? <AdminApp /> : <ClientApp />}
