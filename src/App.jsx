@@ -494,7 +494,7 @@ function AdminApp() {
 
       const { data, error } = await supabase
         .from("clientes")
-        .select("id, nombre, empresa, telefono, correo, activo")
+        .select("id, nombre, empresa, telefono, correo, ubicacion, nit, observaciones, activo")
         .order("nombre", { ascending: true });
 
       if (!mounted) return;
@@ -540,7 +540,7 @@ const guardarCliente = async () => {
         activo: true
       }
     ])
-    .select("id, nombre, empresa, telefono, correo, activo")
+    .select("id, nombre, empresa, telefono, correo, ubicacion, nit, observaciones, activo")
     .single();
 
   if (error) {
@@ -866,6 +866,26 @@ const guardarCliente = async () => {
           {clienteSeleccionado.activo ? "Activo" : "Inactivo"}
         </div>
       </div>
+      <div>
+  <div style={{ fontSize: 11, color: C.muted }}>Ubicación</div>
+  <div style={{ fontWeight: 600 }}>
+    {clienteSeleccionado.ubicacion || "Sin ubicación"}
+  </div>
+</div>
+
+<div>
+  <div style={{ fontSize: 11, color: C.muted }}>NIT</div>
+  <div style={{ fontWeight: 600 }}>
+    {clienteSeleccionado.nit || "Sin NIT"}
+  </div>
+</div>
+
+<div style={{ gridColumn: "1 / -1" }}>
+  <div style={{ fontSize: 11, color: C.muted }}>Observaciones</div>
+  <div style={{ fontWeight: 600 }}>
+    {clienteSeleccionado.observaciones || "Sin observaciones"}
+  </div>
+</div>
     </div>
   </div>
 )}
