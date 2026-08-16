@@ -469,13 +469,87 @@ function AdminApp() {
 /* PORTAL DEL CLIENTE                                                      */
 /* ---------------------------------------------------------------------- */
 function ClientApp() {
-  const [clienteId, setClienteId] = useState("c1");
   const [toast, setToast] = useState(null);
-  const cliente = CLIENTES.find((c) => c.id === clienteId);
-  const propiedad = PROPIEDADES_CLIENTE[clienteId];
-  const trabajos = TRABAJOS_CLIENTE[clienteId] || [];
-  const pct = useMemo(() => Math.round((cliente.realizado / cliente.ha) * 100), [cliente]);
+  const [cliente, setCliente] = useState(null);
+  const [cargandoCliente, setCargandoCliente] = useState(true);
+
+  const propiedad = null;
+  const trabajos = [];
+
+  useEffect(() => {
+    let mounted = true;
+
+    const cargarCliente = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        if (mounted) setCargandoCliente(false);
+        return;
+      }
+
+      const { data: perfil } = await supabase
+        .from("perfiles")
+        .select("cliente_id")
+        .eq("usuario_id", user.id)
+        .eq("rol", "cliente")
+        .eq("activo", true)
+        .maybeSingle();
+
+      if (!perfil?.cliente_id) {
+        if (mounted) {
+          setCliente(null);
+          setCargandoCliente(false);
+        }
+        return;
+      }
+
+      const { data: clienteReal } = await supabase
+        .from("clientes")
+        .select("id, nombre, empresa")
+        .eq("id", perfil.cliente_id)
+        .maybeSingle();
+
+      if (!mounted) return;
+
+      if (clienteReal) {
+        setCliente({
+          ...clienteReal,
+          cultivo: "Sin campaña",
+          ha: 0,
+          realizado: 0,
+          facturado: 0,
+          pagado: 0,
+          precio: 0,
+        });
+      }
+
+      setCargandoCliente(false);
+    };
+
+    cargarCliente();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (cargandoCliente) {
+    return <div style={{ padding: 30 }}>Cargando cliente...</div>;
+  }
+
+  if (!cliente) {
+    return <div style={{ padding: 30 }}>Cliente no disponible</div>;
+  }
+
+  const pct =
+    cliente.ha > 0
+      ? Math.round((cliente.realizado / cliente.ha) * 100)
+      : 0;
+
   const saldo = cliente.facturado - cliente.pagado;
+
 
   const descargar = (id) => {
     setToast(`Reporte ${id} listo para descargar (demostración)`);
@@ -501,21 +575,7 @@ function ClientApp() {
           <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 2 }}>Bienvenido</div>
           <div className="as-display" style={{ fontWeight: 700, fontSize: 20 }}>{cliente.nombre}</div>
         </div>
-        <div style={{ position: "relative" }}>
-          <select
-            value={clienteId}
-            onChange={(e) => setClienteId(e.target.value)}
-            style={{
-              appearance: "none", background: C.surface, border: `1px solid ${C.border}`,
-              borderRadius: 10, padding: "9px 32px 9px 14px", fontSize: 13, fontWeight: 600,
-              color: C.ink, cursor: "pointer",
-            }}
-          >
-            {CLIENTES.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-          </select>
-          <ChevronDown size={14} style={{ position: "absolute", right: 10, top: 12, pointerEvents: "none", color: C.muted }} />
-        </div>
-      </div>
+     
 
       {/* Campaign hero */}
       <div style={{
