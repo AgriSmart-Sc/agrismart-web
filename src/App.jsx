@@ -466,11 +466,25 @@ function AdminApp() {
     </div>
   );
 }
-function AdminClientes() {
-  const [clientes, setClientes] = useState([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState(null);
 
+ function AdminClientes() {
+   const [clientes, setClientes] = useState([]);
+   const [cargando, setCargando] = useState(true);
+   const [error, setError] = useState(null);
+
+   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+      const [guardando, setGuardando] = useState(false);
+      const [form, setForm] = useState({
+        nombre: "",
+        empresa: "",
+        telefono: "",
+        correo: "",
+        ubicacion: "",
+        nit: "",
+        observaciones: ""
+      });
+
+      
   useEffect(() => {
     let mounted = true;
 
@@ -502,7 +516,58 @@ function AdminClientes() {
       mounted = false;
     };
   }, []);
+const guardarCliente = async () => {
+  if (!form.nombre.trim()) {
+    setError("El nombre del cliente es obligatorio");
+    return;
+  }
 
+  setGuardando(true);
+  setError(null);
+
+  const { data, error } = await supabase
+    .from("clientes")
+    .insert([
+      {
+        nombre: form.nombre.trim(),
+        empresa: form.empresa.trim() || null,
+        telefono: form.telefono.trim() || null,
+        correo: form.correo.trim() || null,
+        ubicacion: form.ubicacion.trim() || null,
+        nit: form.nit.trim() || null,
+        observaciones: form.observaciones.trim() || null,
+        activo: true
+      }
+    ])
+    .select("id, nombre, empresa, telefono, correo, activo")
+    .single();
+
+  if (error) {
+    console.error("Error creando cliente:", error);
+    setError(error.message);
+    setGuardando(false);
+    return;
+  }
+
+  setClientes((actuales) =>
+    [...actuales, data].sort((a, b) =>
+      a.nombre.localeCompare(b.nombre)
+    )
+  );
+
+  setForm({
+    nombre: "",
+    empresa: "",
+    telefono: "",
+    correo: "",
+    ubicacion: "",
+    nit: "",
+    observaciones: ""
+  });
+
+  setMostrarFormulario(false);
+  setGuardando(false);
+};
   if (cargando) {
     return <div style={{ padding: 24 }}>Cargando clientes...</div>;
   }
@@ -531,8 +596,186 @@ function AdminClientes() {
             {clientes.length} clientes registrados
           </div>
         </div>
+        <button
+  onClick={() => setMostrarFormulario(true)}
+  style={{
+    border: "none",
+    background: C.primary,
+    color: "#fff",
+    padding: "10px 16px",
+    borderRadius: 10,
+    fontWeight: 700,
+    cursor: "pointer"
+  }}
+>
+  + Nuevo cliente
+</button>
       </div>
+{mostrarFormulario && (
+  <div
+    style={{
+      background: C.surface,
+      border: `1px solid ${C.border}`,
+      borderRadius: 14,
+      padding: 20,
+      marginBottom: 20
+    }}
+  >
+    <div
+      style={{
+        fontSize: 18,
+        fontWeight: 700,
+        color: C.ink,
+        marginBottom: 16
+      }}
+    >
+      Nuevo cliente
+    </div>
 
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        gap: 12
+      }}
+    >
+      <input
+        placeholder="Nombre del cliente *"
+        value={form.nombre}
+        onChange={(e) =>
+          setForm({ ...form, nombre: e.target.value })
+        }
+        style={{
+          padding: 12,
+          borderRadius: 10,
+          border: `1px solid ${C.border}`
+        }}
+      />
+
+      <input
+        placeholder="Empresa"
+        value={form.empresa}
+        onChange={(e) =>
+          setForm({ ...form, empresa: e.target.value })
+        }
+        style={{
+          padding: 12,
+          borderRadius: 10,
+          border: `1px solid ${C.border}`
+        }}
+      />
+
+      <input
+        placeholder="Teléfono"
+        value={form.telefono}
+        onChange={(e) =>
+          setForm({ ...form, telefono: e.target.value })
+        }
+        style={{
+          padding: 12,
+          borderRadius: 10,
+          border: `1px solid ${C.border}`
+        }}
+      />
+
+      <input
+        placeholder="Correo"
+        value={form.correo}
+        onChange={(e) =>
+          setForm({ ...form, correo: e.target.value })
+        }
+        style={{
+          padding: 12,
+          borderRadius: 10,
+          border: `1px solid ${C.border}`
+        }}
+      />
+
+      <input
+        placeholder="Ubicación"
+        value={form.ubicacion}
+        onChange={(e) =>
+          setForm({ ...form, ubicacion: e.target.value })
+        }
+        style={{
+          padding: 12,
+          borderRadius: 10,
+          border: `1px solid ${C.border}`
+        }}
+      />
+
+      <input
+        placeholder="NIT"
+        value={form.nit}
+        onChange={(e) =>
+          setForm({ ...form, nit: e.target.value })
+        }
+        style={{
+          padding: 12,
+          borderRadius: 10,
+          border: `1px solid ${C.border}`
+        }}
+      />
+    </div>
+
+    <textarea
+      placeholder="Observaciones"
+      value={form.observaciones}
+      onChange={(e) =>
+        setForm({ ...form, observaciones: e.target.value })
+      }
+      style={{
+        width: "100%",
+        marginTop: 12,
+        padding: 12,
+        minHeight: 90,
+        borderRadius: 10,
+        border: `1px solid ${C.border}`,
+        boxSizing: "border-box"
+      }}
+    />
+
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: 10,
+        marginTop: 16
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setMostrarFormulario(false)}
+        style={{
+          padding: "10px 16px",
+          borderRadius: 10,
+          border: `1px solid ${C.border}`,
+          background: C.surface,
+          cursor: "pointer"
+        }}
+      >
+        Cancelar
+      </button>
+
+      <button
+        type="button"
+        onClick={guardarCliente}
+        disabled={guardando}
+        style={{
+          padding: "10px 16px",
+          borderRadius: 10,
+          border: "none",
+          background: C.primary,
+          color: "#fff",
+          fontWeight: 700,
+          cursor: "pointer"
+        }}
+      >
+        {guardando ? "Guardando..." : "Guardar cliente"}
+      </button>
+    </div>
+  </div>
+)}
       <div style={{
         background: C.surface,
         border: `1px solid ${C.border}`,
