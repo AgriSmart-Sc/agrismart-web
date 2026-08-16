@@ -475,6 +475,9 @@ function AdminApp() {
    const [mostrarFormulario, setMostrarFormulario] = useState(false);
       const [guardando, setGuardando] = useState(false);
    const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
+   const [trabajosCliente, setTrabajosCliente] = useState([]);
+const [pagosCliente, setPagosCliente] = useState([]);
+const [cargandoFicha, setCargandoFicha] = useState(false);
       const [form, setForm] = useState({
         nombre: "",
         empresa: "",
@@ -517,6 +520,64 @@ function AdminApp() {
       mounted = false;
     };
   }, []);
+   useEffect(() => {
+  if (!clienteSeleccionado?.id) {
+    setTrabajosCliente([]);
+    setPagosCliente([]);
+    return;
+  }
+
+  let activo = true;
+
+  const cargarFichaCliente = async () => {
+    setCargandoFicha(true);
+
+    const [
+      { data: trabajosData, error: trabajosError },
+      { data: pagosData, error: pagosError }
+    ] = await Promise.all([
+      supabase
+        .from("trabajos")
+        .select(
+          "id, cliente_id, drone_id, fecha, propiedad, lote, cultivo, hectareas, tarifa_ha, monto_total, estado"
+        )
+        .eq("cliente_id", clienteSeleccionado.id)
+        .order("fecha", { ascending: false }),
+
+      supabase
+        .from("pagos")
+        .select(
+          "id, cliente_id, trabajo_id, fecha, monto, metodo, referencia, observaciones"
+        )
+        .eq("cliente_id", clienteSeleccionado.id)
+        .order("fecha", { ascending: false })
+    ]);
+
+    if (!activo) return;
+
+    if (trabajosError || pagosError) {
+      console.error("Error cargando ficha del cliente:", {
+        trabajosError,
+        pagosError
+      });
+
+      setTrabajosCliente([]);
+      setPagosCliente([]);
+      setCargandoFicha(false);
+      return;
+    }
+
+    setTrabajosCliente(trabajosData || []);
+    setPagosCliente(pagosData || []);
+    setCargandoFicha(false);
+  };
+
+  cargarFichaCliente();
+
+  return () => {
+    activo = false;
+  };
+}, [clienteSeleccionado?.id]);
 const guardarCliente = async () => {
   if (!form.nombre.trim()) {
     setError("El nombre del cliente es obligatorio");
@@ -569,6 +630,22 @@ const guardarCliente = async () => {
   setMostrarFormulario(false);
   setGuardando(false);
 };
+   const hectareasCliente = trabajosCliente.reduce(
+  (total, t) => total + Number(t.hectareas || 0),
+  0
+);
+
+const totalFacturadoCliente = trabajosCliente.reduce(
+  (total, t) => total + Number(t.monto_total || 0),
+  0
+);
+
+const totalPagadoCliente = pagosCliente.reduce(
+  (total, p) => total + Number(p.monto || 0),
+  0
+);
+
+const saldoCliente = totalFacturadoCliente - totalPagadoCliente;
   if (cargando) {
     return <div style={{ padding: 24 }}>Cargando clientes...</div>;
   }
@@ -887,6 +964,58 @@ const guardarCliente = async () => {
   </div>
 </div>
     </div>
+    <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+    gap: 12,
+    marginTop: 20,
+    paddingTop: 20,
+    borderTop: `1px solid ${C.border}`
+  }}
+>
+  <div>
+    <div style={{ fontSize: 11, color: C.muted }}>
+      Hectáreas
+    </div>
+    <div style={{ fontSize: 20, fontWeight: 700, color: C.ink }}>
+      {hectareasCliente.toLocaleString("es-BO")} ha
+    </div>
+  </div>
+
+  <div>
+    <div style={{ fontSize: 11, color: C.muted }}>
+      Total facturado
+    </div>
+    <div style={{ fontSize: 20, fontWeight: 700, color: C.ink }}>
+      Bs {totalFacturadoCliente.toLocaleString("es-BO")}
+    </div>
+  </div>
+
+  <div>
+    <div style={{ fontSize: 11, color: C.muted }}>
+      Total pagado
+    </div>
+    <div style={{ fontSize: 20, fontWeight: 700, color: C.primary }}>
+      Bs {totalPagadoCliente.toLocaleString("es-BO")}
+    </div>
+  </div>
+
+  <div>
+    <div style={{ fontSize: 11, color: C.muted }}>
+      Saldo pendiente
+    </div>
+    <div
+      style={{
+        fontSize: 20,
+        fontWeight: 700,
+        color: saldoCliente > 0 ? C.alert : C.primary
+      }}
+    >
+      Bs {saldoCliente.toLocaleString("es-BO")}
+    </div>
+  </div>
+</div>
   </div>
 )}
       <div style={{
