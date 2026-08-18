@@ -369,13 +369,16 @@ function AdminDrones() {
   const [dronesReales, setDronesReales] = useState([]);
 const [cargandoDrones, setCargandoDrones] = useState(true);
 const [errorDrones, setErrorDrones] = useState(null);
+  const [trabajosDrones, setTrabajosDrones] = useState([]);
   useEffect(() => {
   let mounted = true;
 
   const cargarDrones = async () => {
     setCargandoDrones(true);
     setErrorDrones(null);
-
+const { data: trabajosData, error: trabajosError } = await supabase
+  .from("trabajos")
+  .select("id, drone_id, hectareas, monto_total, estado");
     const { data, error } = await supabase
       .from("drones")
       .select(
@@ -384,14 +387,28 @@ const [errorDrones, setErrorDrones] = useState(null);
       .order("codigo", { ascending: true });
 
     if (!mounted) return;
+if (error || trabajosError) {
+  const mensaje =
+    error?.message ||
+    trabajosError?.message ||
+    "Error desconocido";
 
-    if (error) {
-      console.error("Error cargando drones:", error);
-      setErrorDrones(error.message);
-      setDronesReales([]);
-    } else {
-      setDronesReales(data || []);
-    }
+  console.error("Error cargando drones o trabajos:", {
+    error,
+    trabajosError
+  });
+
+  setErrorDrones(mensaje);
+  setDronesReales([]);
+  setTrabajosDrones([]);
+} else {
+  setErrorDrones(null);
+  setDronesReales(data || []);
+  setTrabajosDrones(trabajosData || []);
+}
+    
+    
+   
 
     setCargandoDrones(false);
   };
@@ -402,17 +419,33 @@ const [errorDrones, setErrorDrones] = useState(null);
     mounted = false;
   };
 }, []);
-  const dronesVista = dronesReales.map((d) => ({
-  codigo: d.codigo,
-  modelo: d.modelo,
-  estado: d.estado || "activo",
-  ha: Number(d.hectareas_acumuladas || 0),
-  horas: Number(d.horas_vuelo || 0),
-  bateriasCiclos: 0,
-  proximoMant: 0,
-  facturacion: 0,
-  utilidad: 0
-}));
+  const dronesVista = dronesReales.map((d) => {
+  const trabajosDelDron = trabajosDrones.filter(
+    (t) => t.drone_id === d.id
+  );
+
+  const hectareasTrabajos = trabajosDelDron.reduce(
+    (total, t) => total + Number(t.hectareas || 0),
+    0
+  );
+
+  const facturacionTrabajos = trabajosDelDron.reduce(
+    (total, t) => total + Number(t.monto_total || 0),
+    0
+  );
+
+  return {
+    codigo: d.codigo,
+    modelo: d.modelo,
+    estado: d.estado || "activo",
+    ha: hectareasTrabajos,
+    horas: Number(d.horas_vuelo || 0),
+    bateriasCiclos: 0,
+    proximoMant: 0,
+    facturacion: facturacionTrabajos,
+    utilidad: 0
+  };
+});
   if (cargandoDrones) {
   return <div style={{ padding: 24 }}>Cargando drones...</div>;
 }
@@ -452,8 +485,8 @@ if (errorDrones) {
             </div>
             <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 6 }}>Rentabilidad estimada (mes)</div>
             <div style={{ display: "flex", gap: 16 }}>
-              <div><span className="as-mono" style={{ fontWeight: 700, fontSize: 15 }}>{fmtBs(165600)}</span><div style={{ fontSize: 11, color: C.muted }}>Facturación</div></div>
-              <div><span className="as-mono" style={{ fontWeight: 700, fontSize: 15, color: C.primary }}>{fmtBs(97200)}</span><div style={{ fontSize: 11, color: C.muted }}>Utilidad</div></div>
+              <div><span className="as-mono" style={{ fontWeight: 700, fontSize: 15 }}>{fmtBs(d.facturacion)}</span><div style={{ fontSize: 11, color: C.muted }}>Facturación</div></div>
+              <div><span className="as-mono" style={{ fontWeight: 700, fontSize: 15, color: C.primary }}>{fmtBs(d.utilidad)}</span><div style={{ fontSize: 11, color: C.muted }}>Utilidad</div></div>
             </div>
           </div>
         ))}
