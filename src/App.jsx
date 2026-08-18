@@ -366,10 +366,68 @@ function AdminCobranza() {
 /* ADMIN — DRONES                                                          */
 /* ---------------------------------------------------------------------- */
 function AdminDrones() {
+  const [dronesReales, setDronesReales] = useState([]);
+const [cargandoDrones, setCargandoDrones] = useState(true);
+const [errorDrones, setErrorDrones] = useState(null);
+  useEffect(() => {
+  let mounted = true;
+
+  const cargarDrones = async () => {
+    setCargandoDrones(true);
+    setErrorDrones(null);
+
+    const { data, error } = await supabase
+      .from("drones")
+      .select(
+        "id, codigo, modelo, estado, hectareas_acumuladas, horas_vuelo, numero_serie, observaciones"
+      )
+      .order("codigo", { ascending: true });
+
+    if (!mounted) return;
+
+    if (error) {
+      console.error("Error cargando drones:", error);
+      setErrorDrones(error.message);
+      setDronesReales([]);
+    } else {
+      setDronesReales(data || []);
+    }
+
+    setCargandoDrones(false);
+  };
+
+  cargarDrones();
+
+  return () => {
+    mounted = false;
+  };
+}, []);
+  const dronesVista = dronesReales.map((d) => ({
+  codigo: d.codigo,
+  modelo: d.modelo,
+  estado: d.estado || "activo",
+  ha: Number(d.hectareas_acumuladas || 0),
+  horas: Number(d.horas_vuelo || 0),
+  bateriasCiclos: 0,
+  proximoMant: 0,
+  facturacion: 0,
+  utilidad: 0
+}));
+  if (cargandoDrones) {
+  return <div style={{ padding: 24 }}>Cargando drones...</div>;
+}
+
+if (errorDrones) {
+  return (
+    <div style={{ padding: 24 }}>
+      Error al cargar drones: {errorDrones}
+    </div>
+  );
+}
   return (
     <div className="as-fadein">
       <div style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
-        {DRONES.map((d) => (
+        {dronesVista.map((d) => (
           <div key={d.codigo} style={{
             background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14,
             padding: 22, flex: "1 1 300px", maxWidth: 380,
