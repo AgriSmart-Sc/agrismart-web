@@ -441,7 +441,12 @@ if (error || trabajosError) {
     ha: hectareasTrabajos,
     horas: Number(d.horas_vuelo || 0),
     bateriasCiclos: 0,
-    proximoMant: 0,
+    proximoMant:
+  hectareasTrabajos === 0
+    ? 100
+    : hectareasTrabajos % 100 === 0
+      ? 0
+      : 100 - (hectareasTrabajos % 100),
     facturacion: facturacionTrabajos,
     utilidad: 0
   };
