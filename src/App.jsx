@@ -594,7 +594,9 @@ const [nuevoTrabajo, setNuevoTrabajo] = useState({
   cultivo: "",
   hectareas: "",
   tarifa_ha: "90",
-  estado: "programado"
+  estado: "programado",
+horas_vuelo: "",
+ciclos_bateria: ""
 });
       const [form, setForm] = useState({
         nombre: "",
@@ -772,12 +774,14 @@ const [nuevoTrabajo, setNuevoTrabajo] = useState({
         hectareas,
         tarifa_ha: tarifaHa,
         monto_total: montoTotal,
-        estado: nuevoTrabajo.estado
+horas_vuelo: Number(nuevoTrabajo.horas_vuelo || 0),
+ciclos_bateria: Number(nuevoTrabajo.ciclos_bateria || 0),
+estado: nuevoTrabajo.estado
       }
     ])
     .select(
-      "id, cliente_id, drone_id, fecha, propiedad, lote, cultivo, hectareas, tarifa_ha, monto_total, estado"
-    )
+  "id, cliente_id, drone_id, fecha, propiedad, lote, cultivo, hectareas, tarifa_ha, monto_total, estado, horas_vuelo, ciclos_bateria"
+)
     .single();
 
   if (error) {
@@ -794,14 +798,16 @@ const [nuevoTrabajo, setNuevoTrabajo] = useState({
   );
 
   setNuevoTrabajo({
-    fecha: new Date().toISOString().slice(0, 10),
-    propiedad: "",
-    lote: "",
-    cultivo: "",
-    hectareas: "",
-    tarifa_ha: "90",
-    estado: "programado"
-  });
+  fecha: new Date().toISOString().slice(0, 10),
+  propiedad: "",
+  lote: "",
+  cultivo: "",
+  hectareas: "",
+  tarifa_ha: "90",
+  estado: "programado",
+  horas_vuelo: "",
+  ciclos_bateria: ""
+});
 
   setMostrarNuevoTrabajo(false);
   setGuardandoTrabajo(false);
@@ -1273,7 +1279,43 @@ const saldoCliente = totalFacturadoCliente - totalPagadoCliente;
           border: `1px solid ${C.border}`
         }}
       />
+<input
+  type="number"
+  step="0.01"
+  min="0"
+  placeholder="Horas de vuelo"
+  value={nuevoTrabajo.horas_vuelo}
+  onChange={(e) =>
+    setNuevoTrabajo({
+      ...nuevoTrabajo,
+      horas_vuelo: e.target.value
+    })
+  }
+  style={{
+    padding: 12,
+    borderRadius: 10,
+    border: `1px solid ${C.border}`
+  }}
+/>
 
+<input
+  type="number"
+  step="1"
+  min="0"
+  placeholder="Ciclos de batería"
+  value={nuevoTrabajo.ciclos_bateria}
+  onChange={(e) =>
+    setNuevoTrabajo({
+      ...nuevoTrabajo,
+      ciclos_bateria: e.target.value
+    })
+  }
+  style={{
+    padding: 12,
+    borderRadius: 10,
+    border: `1px solid ${C.border}`
+  }}
+/>
       <select
         value={nuevoTrabajo.estado}
         onChange={(e) =>
