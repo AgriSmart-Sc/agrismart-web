@@ -378,7 +378,9 @@ const [errorDrones, setErrorDrones] = useState(null);
     setErrorDrones(null);
 const { data: trabajosData, error: trabajosError } = await supabase
   .from("trabajos")
-  .select("id, drone_id, hectareas, monto_total, estado");
+.select(
+  "id, drone_id, hectareas, monto_total, estado, horas_vuelo, ciclos_bateria"
+);
     const { data, error } = await supabase
       .from("drones")
       .select(
@@ -433,14 +435,22 @@ if (error || trabajosError) {
     (total, t) => total + Number(t.monto_total || 0),
     0
   );
+const horasTrabajos = trabajosDelDron.reduce(
+  (total, t) => total + Number(t.horas_vuelo || 0),
+  0
+);
 
+const ciclosBateriaTrabajos = trabajosDelDron.reduce(
+  (total, t) => total + Number(t.ciclos_bateria || 0),
+  0
+);
   return {
     codigo: d.codigo,
     modelo: d.modelo,
     estado: d.estado || "activo",
     ha: hectareasTrabajos,
-    horas: Number(d.horas_vuelo || 0),
-    bateriasCiclos: 0,
+    horas: horasTrabajos,
+bateriasCiclos: ciclosBateriaTrabajos,
     proximoMant:
   hectareasTrabajos === 0
     ? 100
