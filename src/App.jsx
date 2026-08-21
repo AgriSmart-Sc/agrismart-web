@@ -1286,7 +1286,24 @@ const saldoCliente = totalFacturadoCliente - totalPagadoCliente;
           border: `1px solid ${C.border}`
         }}
       />
-
+<input
+  type="number"
+  step="0.01"
+  min="0"
+  placeholder="Horas de vuelo"
+  value={nuevoTrabajo.horas_vuelo}
+  onChange={(e) =>
+    setNuevoTrabajo({
+      ...nuevoTrabajo,
+      horas_vuelo: e.target.value
+    })
+  }
+  style={{
+    padding: 12,
+    borderRadius: 10,
+    border: `1px solid ${C.border}`
+  }}
+/>
 
 <input
   type="number"
