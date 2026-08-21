@@ -379,7 +379,7 @@ const [errorDrones, setErrorDrones] = useState(null);
 const { data: trabajosData, error: trabajosError } = await supabase
   .from("trabajos")
 .select(
-  "id, drone_id, hectareas, monto_total, estado, horas_vuelo, ciclos_bateria"
+  "id, drone_id, hectareas, monto_total, estado, horas_vuelo, ciclos_bateria, costo_total"
 );
     const { data, error } = await supabase
       .from("drones")
@@ -435,6 +435,10 @@ if (error || trabajosError) {
     (total, t) => total + Number(t.monto_total || 0),
     0
   );
+    const costosTrabajos = trabajosDelDron.reduce(
+  (total, t) => total + Number(t.costo_total || 0),
+  0
+);
 const horasTrabajos = trabajosDelDron.reduce(
   (total, t) => total + Number(t.horas_vuelo || 0),
   0
@@ -458,7 +462,7 @@ bateriasCiclos: ciclosBateriaTrabajos,
       ? 0
       : 100 - (hectareasTrabajos % 100),
     facturacion: facturacionTrabajos,
-    utilidad: 0
+    utilidad: facturacionTrabajos - costosTrabajos
   };
 });
   if (cargandoDrones) {
@@ -596,7 +600,8 @@ const [nuevoTrabajo, setNuevoTrabajo] = useState({
   tarifa_ha: "90",
   estado: "programado",
 horas_vuelo: "",
-ciclos_bateria: ""
+ciclos_bateria: "",
+  costo_total: ""
 });
       const [form, setForm] = useState({
         nombre: "",
@@ -776,11 +781,12 @@ ciclos_bateria: ""
         monto_total: montoTotal,
 horas_vuelo: Number(nuevoTrabajo.horas_vuelo || 0),
 ciclos_bateria: Number(nuevoTrabajo.ciclos_bateria || 0),
+        costo_total: Number(nuevoTrabajo.costo_total || 0),
 estado: nuevoTrabajo.estado
       }
     ])
     .select(
-  "id, cliente_id, drone_id, fecha, propiedad, lote, cultivo, hectareas, tarifa_ha, monto_total, estado, horas_vuelo, ciclos_bateria"
+ "id, cliente_id, drone_id, fecha, propiedad, lote, cultivo, hectareas, tarifa_ha, monto_total, estado, horas_vuelo, ciclos_bateria, costo_total" 
 )
     .single();
 
@@ -806,7 +812,8 @@ estado: nuevoTrabajo.estado
   tarifa_ha: "90",
   estado: "programado",
   horas_vuelo: "",
-  ciclos_bateria: ""
+  ciclos_bateria: "",
+    costo_total: ""
 });
 
   setMostrarNuevoTrabajo(false);
@@ -1279,24 +1286,7 @@ const saldoCliente = totalFacturadoCliente - totalPagadoCliente;
           border: `1px solid ${C.border}`
         }}
       />
-<input
-  type="number"
-  step="0.01"
-  min="0"
-  placeholder="Horas de vuelo"
-  value={nuevoTrabajo.horas_vuelo}
-  onChange={(e) =>
-    setNuevoTrabajo({
-      ...nuevoTrabajo,
-      horas_vuelo: e.target.value
-    })
-  }
-  style={{
-    padding: 12,
-    borderRadius: 10,
-    border: `1px solid ${C.border}`
-  }}
-/>
+
 
 <input
   type="number"
@@ -1308,6 +1298,25 @@ const saldoCliente = totalFacturadoCliente - totalPagadoCliente;
     setNuevoTrabajo({
       ...nuevoTrabajo,
       ciclos_bateria: e.target.value
+    })
+  }
+  style={{
+    padding: 12,
+    borderRadius: 10,
+    border: `1px solid ${C.border}`
+  }}
+/>
+
+<input
+  type="number"
+  step="0.01"
+  min="0"
+  placeholder="Costo total (Bs)"
+  value={nuevoTrabajo.costo_total}
+  onChange={(e) =>
+    setNuevoTrabajo({
+      ...nuevoTrabajo,
+      costo_total: e.target.value
     })
   }
   style={{
